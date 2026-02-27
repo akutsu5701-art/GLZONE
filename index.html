@@ -3,153 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GLZONE | 智能追剧日历</title>
-    
-    <!-- 引入 Tailwind CSS 及其插件，保证样式完美还原 -->
+    <title>GLZONE 追剧日历</title>
+    <!-- 1. 样式引擎：必须确保加载。即使有生产警告也没关系，它能跑通排版 -->
     <script src="https://cdn.tailwindcss.com?plugins=typography,forms"></script>
-    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        /* 隐藏滚动条但保留功能 */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        /* 模拟 AI Studio 的平滑过渡 */
-        .transition-all { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* 强制覆盖一些基础样式，防止排版坍塌 */
+        body { margin: 0; padding: 0; background-color: #f8fafc; }
+        #calendar-wrapper { min-height: 500px; }
+        /* 如果日历格子太窄，强制设置最小宽度 */
+        .calendar-grid { min-width: 600px; }
     </style>
 </head>
-<body class="bg-slate-50 flex h-screen overflow-hidden text-slate-900">
+<body class="flex h-screen overflow-hidden">
 
-    <!-- 1. 左侧侧边栏 (Sidebar) -->
-    <aside id="sidebar" class="w-64 bg-slate-900 text-white flex flex-col transition-all shadow-2xl z-20">
+    <!-- 左侧侧边栏 -->
+    <aside id="sidebar" class="w-64 bg-slate-900 text-white flex flex-col shadow-2xl transition-all duration-300">
         <div class="p-6">
-            <h1 id="ui-title" class="text-2xl font-bold tracking-tight italic text-blue-400">GLZONE</h1>
-            <p class="text-slate-500 text-xs mt-1 text-uppercase tracking-widest">CALENDAR SYSTEM</p>
+            <h1 id="ui-title" class="text-2xl font-bold text-blue-400 italic">GLZONE</h1>
+            <p class="text-slate-500 text-[10px] tracking-widest mt-1">SMART SYSTEM</p>
         </div>
-        
-        <nav id="ui-menu" class="flex-1 px-4 space-y-2 overflow-y-auto no-scrollbar">
-            <!-- 动态菜单项 -->
-            <div class="py-2 px-4 rounded-lg bg-blue-600/20 text-blue-400 text-sm">正在加载配置...</div>
+        <nav id="ui-menu" class="flex-1 px-4 space-y-2 overflow-y-auto">
+            <!-- 动态菜单 -->
         </nav>
-
-        <div class="p-4 border-t border-slate-800 text-[10px] text-slate-500 flex justify-between">
-            <span>v2.0.0 Stable</span>
-            <span id="last-sync">未同步</span>
+        <div class="p-4 border-t border-slate-800 text-[10px] text-slate-500">
+            Status: <span id="sync-time">就绪</span>
         </div>
     </aside>
 
-    <!-- 2. 右侧主内容区 -->
-    <div class="flex-1 flex flex-col relative">
-        
-        <!-- 顶部控制栏 (Header) -->
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center px-8 justify-between shadow-sm z-10">
-            <div class="flex items-center space-x-3">
-                <div id="status-dot" class="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></div>
-                <span id="ui-status" class="text-sm font-medium text-slate-500">系统就绪</span>
+    <!-- 右侧内容区 -->
+    <div class="flex-1 flex flex-col">
+        <!-- 顶部输入框 -->
+        <header class="h-16 bg-white border-b flex items-center px-6 justify-between shadow-sm">
+            <div class="flex items-center space-x-2">
+                <div id="status-dot" class="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
+                <span id="ui-status" class="text-sm font-medium text-slate-500">准备就绪</span>
             </div>
-
-            <div class="flex items-center bg-slate-100 rounded-full px-4 py-1.5 border border-slate-200 w-1/2 focus-within:ring-2 focus-within:ring-blue-500 transition-all">
-                <input id="user-input" type="text" placeholder="给 Gemini 下达更新指令..." 
-                       class="bg-transparent border-none focus:ring-0 text-sm w-full text-slate-700">
-                <button onclick="askGemini()" class="ml-2 text-blue-600 hover:text-blue-800 font-bold text-sm whitespace-nowrap">同步更新</button>
+            <div class="flex items-center bg-slate-100 rounded-lg px-4 py-2 border w-1/2">
+                <input id="user-input" type="text" placeholder="输入更新指令..." class="bg-transparent border-none focus:ring-0 text-sm w-full outline-none">
+                <button onclick="askGemini()" class="text-blue-600 font-bold text-sm ml-2">同步</button>
             </div>
         </header>
 
-        <!-- 日历显示区 (Main) -->
-        <main class="flex-1 overflow-auto p-6 md:p-12 bg-slate-100 no-scrollbar">
-            <!-- 这里是日历的海报容器 -->
-            <div id="calendar-wrapper" class="max-w-5xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden transition-all transform hover:scale-[1.01]">
-                <!-- 初始状态内容 -->
-                <div class="flex flex-col items-center justify-center py-32 text-slate-300">
-                    <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    <p class="text-lg">请输入指令生成或同步你的追剧日历</p>
+        <!-- 日历展示区：排版的关键 -->
+        <main class="flex-1 overflow-auto p-4 md:p-8 bg-slate-100">
+            <div class="max-w-5xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden">
+                <div id="calendar-wrapper" class="p-2 md:p-4">
+                    <!-- 这里是展示日历格子的核心 -->
+                    <div class="flex items-center justify-center py-40 text-slate-300">
+                        等待 Gemini 生成日历...
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- 3. 核心 JavaScript 逻辑 -->
-    <script type="module">
-        // ================= 配置区 =================
+    <!-- JavaScript 逻辑：这次我们使用更稳健的写法 -->
+    <script>
+        // ======= [重点] 填写你的 API KEY =======
         const API_KEY = "在这里填入你的_GEMINI_API_KEY"; 
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-        // ==========================================
+        // =====================================
 
-        // 页面启动：从记忆中读取日历
-        window.onload = () => {
-            const savedData = localStorage.getItem('glzone_data');
-            if (savedData) {
-                renderUI(JSON.parse(savedData));
-            }
+        // 初始化：加载旧日历
+        window.onload = function() {
+            var saved = localStorage.getItem('glzone_v3');
+            if (saved) { renderUI(JSON.parse(saved)); }
         };
 
-        // 核心：调用 Gemini 并解析回复
-        window.askGemini = async function() {
-            const input = document.getElementById('user-input');
-            const statusText = document.getElementById('ui-status');
-            const statusDot = document.getElementById('status-dot');
-            
+        async function askGemini() {
+            var input = document.getElementById('user-input');
+            var statusText = document.getElementById('ui-status');
+            var statusDot = document.getElementById('status-dot');
             if (!input.value) return;
 
-            // 进入加载状态
-            statusText.innerText = "Gemini 正在构建日历...";
-            statusDot.classList.replace('bg-green-500', 'bg-yellow-500');
+            statusText.innerText = "同步中...";
+            statusDot.style.backgroundColor = "#eab308";
 
             try {
-                const response = await fetch(API_URL, {
+                var response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + API_KEY, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{
-                            parts: [{ text: `
-                                现在的要求是：${input.value}。
-                                必须严格返回如下 JSON 格式：
-                                {
-                                  "ui": { "title": "追剧日历", "menu": ["菜单1", "菜单2"], "color": "#十六进制颜色", "status": "运行中" },
-                                  "calendar_html": "使用 Tailwind CSS 编写的 HTML 代码"
-                                }
-                                不要带 markdown 标签。
-                            ` }]
+                            parts: [{ text: "基于之前的内容，执行指令：" + input.value + "。请务必返回 JSON 格式：{ \"ui\": { \"title\": \"...\", \"menu\": [\"...\"], \"color\": \"#...\", \"status\": \"...\" }, \"calendar_html\": \"...\" }。calendar_html 必须是带有 Tailwind CSS 样式的表格或网格 HTML。" }]
                         }]
                     })
                 });
 
-                const data = await response.json();
-                const rawText = data.candidates[0].content.parts[0].text;
+                var data = await response.json();
+                var text = data.candidates[0].content.parts[0].text;
+                // 清理并解析 JSON
+                var jsonData = JSON.parse(text.replace(/```json|```/g, "").trim());
                 
-                // 格式化清理并解析
-                const cleanJson = JSON.parse(rawText.replace(/```json|```/g, ""));
-                
-                // 渲染 UI 并保存记忆
-                renderUI(cleanJson);
-                localStorage.setItem('glzone_data', JSON.stringify(cleanJson));
+                renderUI(jsonData);
+                localStorage.setItem('glzone_v3', JSON.stringify(jsonData));
 
-                statusText.innerText = "更新成功";
-                statusDot.classList.replace('bg-yellow-500', 'bg-green-500');
-                document.getElementById('last-sync').innerText = new Date().toLocaleTimeString();
+                statusText.innerText = "已更新";
+                statusDot.style.backgroundColor = "#22c55e";
+                document.getElementById('sync-time').innerText = new Date().toLocaleTimeString();
                 input.value = "";
-
             } catch (e) {
                 console.error(e);
-                statusText.innerText = "同步失败，请检查配置";
-                statusDot.classList.replace('bg-yellow-500', 'bg-red-500');
+                statusText.innerText = "同步出错";
+                statusDot.style.backgroundColor = "#ef4444";
             }
-        };
+        }
 
-        // 渲染函数
         function renderUI(data) {
-            // 更新标题
             document.getElementById('ui-title').innerText = data.ui.title;
-            // 更新侧边栏颜色
             document.getElementById('sidebar').style.backgroundColor = data.ui.color || "#0f172a";
-            // 更新状态
             document.getElementById('ui-status').innerText = data.ui.status;
-            // 更新菜单
-            document.getElementById('ui-menu').innerHTML = data.ui.menu.map(item => `
-                <div class="py-2 px-4 hover:bg-white/10 rounded-lg cursor-pointer transition-all text-sm font-medium border border-transparent hover:border-white/10">
-                    ${item}
-                </div>
-            `).join('');
-            // 【核心】更新日历 HTML
+            
+            var menuHtml = "";
+            data.ui.menu.forEach(function(item) {
+                menuHtml += '<div class="py-2 px-4 hover:bg-white/10 rounded cursor-pointer text-sm">' + item + '</div>';
+            });
+            document.getElementById('ui-menu').innerHTML = menuHtml;
+            
+            // 渲染日历核心
             document.getElementById('calendar-wrapper').innerHTML = data.calendar_html;
         }
     </script>
