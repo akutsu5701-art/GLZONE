@@ -1,127 +1,13 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GLZONE 追剧日历</title>
-    <!-- 1. 样式引擎：必须确保加载。即使有生产警告也没关系，它能跑通排版 -->
-    <script src="https://cdn.tailwindcss.com?plugins=typography,forms"></script>
-    <style>
-        /* 强制覆盖一些基础样式，防止排版坍塌 */
-        body { margin: 0; padding: 0; background-color: #f8fafc; }
-        #calendar-wrapper { min-height: 500px; }
-        /* 如果日历格子太窄，强制设置最小宽度 */
-        .calendar-grid { min-width: 600px; }
-    </style>
-</head>
-<body class="flex h-screen overflow-hidden">
-
-    <!-- 左侧侧边栏 -->
-    <aside id="sidebar" class="w-64 bg-slate-900 text-white flex flex-col shadow-2xl transition-all duration-300">
-        <div class="p-6">
-            <h1 id="ui-title" class="text-2xl font-bold text-blue-400 italic">GLZONE</h1>
-            <p class="text-slate-500 text-[10px] tracking-widest mt-1">SMART SYSTEM</p>
-        </div>
-        <nav id="ui-menu" class="flex-1 px-4 space-y-2 overflow-y-auto">
-            <!-- 动态菜单 -->
-        </nav>
-        <div class="p-4 border-t border-slate-800 text-[10px] text-slate-500">
-            Status: <span id="sync-time">就绪</span>
-        </div>
-    </aside>
-
-    <!-- 右侧内容区 -->
-    <div class="flex-1 flex flex-col">
-        <!-- 顶部输入框 -->
-        <header class="h-16 bg-white border-b flex items-center px-6 justify-between shadow-sm">
-            <div class="flex items-center space-x-2">
-                <div id="status-dot" class="w-2.5 h-2.5 bg-green-500 rounded-full"></div>
-                <span id="ui-status" class="text-sm font-medium text-slate-500">准备就绪</span>
-            </div>
-            <div class="flex items-center bg-slate-100 rounded-lg px-4 py-2 border w-1/2">
-                <input id="user-input" type="text" placeholder="输入更新指令..." class="bg-transparent border-none focus:ring-0 text-sm w-full outline-none">
-                <button onclick="askGemini()" class="text-blue-600 font-bold text-sm ml-2">同步</button>
-            </div>
-        </header>
-
-        <!-- 日历展示区：排版的关键 -->
-        <main class="flex-1 overflow-auto p-4 md:p-8 bg-slate-100">
-            <div class="max-w-5xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden">
-                <div id="calendar-wrapper" class="p-2 md:p-4">
-                    <!-- 这里是展示日历格子的核心 -->
-                    <div class="flex items-center justify-center py-40 text-slate-300">
-                        等待 Gemini 生成日历...
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- JavaScript 逻辑：这次我们使用更稳健的写法 -->
-    <script>
-        // ======= [重点] 填写你的 API KEY =======
-        const API_KEY = "AIzaSyCNirUcU7mX20vxdf42a2XzjwS-MnQHB80"; 
-        // =====================================
-
-        // 初始化：加载旧日历
-        window.onload = function() {
-            var saved = localStorage.getItem('glzone_v3');
-            if (saved) { renderUI(JSON.parse(saved)); }
-        };
-
-        async function askGemini() {
-            var input = document.getElementById('user-input');
-            var statusText = document.getElementById('ui-status');
-            var statusDot = document.getElementById('status-dot');
-            if (!input.value) return;
-
-            statusText.innerText = "同步中...";
-            statusDot.style.backgroundColor = "#eab308";
-
-            try {
-                var response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + API_KEY, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{ text: "基于之前的内容，执行指令：" + input.value + "。请务必返回 JSON 格式：{ \"ui\": { \"title\": \"...\", \"menu\": [\"...\"], \"color\": \"#...\", \"status\": \"...\" }, \"calendar_html\": \"...\" }。calendar_html 必须是带有 Tailwind CSS 样式的表格或网格 HTML。" }]
-                        }]
-                    })
-                });
-
-                var data = await response.json();
-                var text = data.candidates[0].content.parts[0].text;
-                // 清理并解析 JSON
-                var jsonData = JSON.parse(text.replace(/```json|```/g, "").trim());
-                
-                renderUI(jsonData);
-                localStorage.setItem('glzone_v3', JSON.stringify(jsonData));
-
-                statusText.innerText = "已更新";
-                statusDot.style.backgroundColor = "#22c55e";
-                document.getElementById('sync-time').innerText = new Date().toLocaleTimeString();
-                input.value = "";
-            } catch (e) {
-                console.error(e);
-                statusText.innerText = "同步出错";
-                statusDot.style.backgroundColor = "#ef4444";
-            }
-        }
-
-        function renderUI(data) {
-            document.getElementById('ui-title').innerText = data.ui.title;
-            document.getElementById('sidebar').style.backgroundColor = data.ui.color || "#0f172a";
-            document.getElementById('ui-status').innerText = data.ui.status;
-            
-            var menuHtml = "";
-            data.ui.menu.forEach(function(item) {
-                menuHtml += '<div class="py-2 px-4 hover:bg-white/10 rounded cursor-pointer text-sm">' + item + '</div>';
-            });
-            document.getElementById('ui-menu').innerHTML = menuHtml;
-            
-            // 渲染日历核心
-            document.getElementById('calendar-wrapper').innerHTML = data.calendar_html;
-        }
-    </script>
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Google AI Studio App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
+
