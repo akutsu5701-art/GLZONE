@@ -1,24 +1,100 @@
-<div class="flex h-screen overflow-hidden">
-  <!-- 1. 动态侧边栏 -->
-  <aside id="sidebar" class="w-64 bg-gray-900 text-white p-5 transition-all duration-500">
-    <h2 id="sidebar-title" class="text-xl font-bold mb-6">AI 助手</h2>
-    <nav id="sidebar-menu" class="space-y-2">
-      <!-- 这里的内容将由 Gemini 生成 -->
-      <div class="text-gray-400 text-sm">等待初始化...</div>
-    </nav>
-  </aside>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLZONE - 智能外壳</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Markdown 解析库，让 content 部分显示更漂亮 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* 平滑过渡动画 */
+        .transition-all { transition: all 0.5s ease; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900">
 
-  <!-- 右侧主区域 -->
-  <div class="flex-1 flex flex-col">
-    <!-- 2. 动态顶部导航 -->
-    <header id="top-bar" class="h-16 border-b flex items-center px-6 bg-white justify-between">
-      <span id="current-status" class="font-medium text-gray-600">就绪</span>
-      <div id="action-buttons"></div>
-    </header>
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- 【侧边栏】ID: sidebar -->
+        <aside id="sidebar" class="w-64 bg-slate-800 text-white p-6 flex flex-col transition-all shadow-xl">
+            <h1 id="sidebar-title" class="text-xl font-bold mb-8 border-b border-slate-700 pb-4">加载中...</h1>
+            <nav id="sidebar-menu" class="flex-1 space-y-3">
+                <!-- 动态菜单项将插入这里 -->
+            </nav>
+            <div class="text-xs text-slate-400 mt-auto pt-4 border-t border-slate-700">
+                Powered by Gemini & GLZONE
+            </div>
+        </aside>
 
-    <!-- 3. 主内容区（你原本的代码放这里） -->
-    <main id="content-area" class="flex-1 p-6 overflow-auto bg-gray-50">
-      <div id="output-text">这里显示 Gemini 的回答...</div>
-    </main>
-  </div>
-</div>
+        <!-- 右侧区域 -->
+        <div class="flex-1 flex flex-col">
+            
+            <!-- 【顶部状态栏】ID: top-bar -->
+            <header id="top-bar" class="h-14 bg-white border-b px-6 flex items-center justify-between shadow-sm">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span id="status-text" class="text-sm font-medium text-gray-600">等待响应...</span>
+                </div>
+                <button onclick="location.reload()" class="text-xs bg-gray-200 px-3 py-1 rounded hover:bg-gray-300">刷新页面</button>
+            </header>
+
+            <!-- 【主内容区】ID: main-content -->
+            <main class="flex-1 overflow-auto p-8">
+                <article id="content-display" class="prose lg:prose-xl max-w-4xl mx-auto bg-white p-10 rounded-2xl shadow-sm border border-gray-100">
+                    <!-- Markdown 内容将渲染在这里 -->
+                    请在下方输入框给 Gemini 发送指令...
+                </article>
+            </main>
+
+        </div>
+    </div>
+
+    <script>
+        // 模拟接收到你刚才发给我的 JSON
+        const geminiResponse = {
+            "ui": {
+                "sidebar_title": "追剧日历 GLZONE",
+                "menu_items": ["日历视图", "剧集管理", "导出海报"],
+                "theme_color": "#2c3e50", // 注意：白色(#ffffff)作为背景时文字需改色，这里建议用深色
+                "status_text": "运行中 - 数据库已就绪"
+            },
+            "content": "### ✅ 应用构建完成\n\n当前 **追剧日历 GLZONE** 已具备以下核心特性：\n\n1. **自适应海报布局**...\n2. **精细化信息展示**..."
+        };
+
+        // 【核心函数】：根据 JSON 更新 UI
+        function updateUI(data) {
+            try {
+                // 1. 更新侧边栏标题
+                document.getElementById('sidebar-title').innerText = data.ui.sidebar_title;
+
+                // 2. 更新顶部状态文字
+                document.getElementById('status-text').innerText = data.ui.status_text;
+
+                // 3. 动态生成菜单
+                const menuItems = data.ui.menu_items.map(item => `
+                    <a href="#" class="block py-2 px-4 rounded hover:bg-white/10 transition-colors cursor-pointer border border-transparent hover:border-slate-500 text-sm">
+                        ${item}
+                    </a>
+                `).join('');
+                document.getElementById('sidebar-menu').innerHTML = menuItems;
+
+                // 4. 更新侧边栏背景色 (如果 theme_color 太白，建议做对比度检查)
+                document.getElementById('sidebar').style.backgroundColor = data.ui.theme_color;
+
+                // 5. 渲染正文内容 (Markdown 转 HTML)
+                const contentHtml = marked.parse(data.content);
+                document.getElementById('content-display').innerHTML = contentHtml;
+
+                console.log("UI 已根据 Gemini 指令更新成功！");
+            } catch (error) {
+                console.error("更新 UI 失败:", error);
+            }
+        }
+
+        // 实际运行：传入数据
+        // 在你的真实项目中，这个函数应该在 fetch(Gemini API) 的 .then() 中调用
+        updateUI(geminiResponse);
+    </script>
+</body>
+</html>
