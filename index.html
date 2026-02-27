@@ -1,13 +1,24 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<div class="flex h-screen overflow-hidden">
+  <!-- 1. 动态侧边栏 -->
+  <aside id="sidebar" class="w-64 bg-gray-900 text-white p-5 transition-all duration-500">
+    <h2 id="sidebar-title" class="text-xl font-bold mb-6">AI 助手</h2>
+    <nav id="sidebar-menu" class="space-y-2">
+      <!-- 这里的内容将由 Gemini 生成 -->
+      <div class="text-gray-400 text-sm">等待初始化...</div>
+    </nav>
+  </aside>
 
+  <!-- 右侧主区域 -->
+  <div class="flex-1 flex flex-col">
+    <!-- 2. 动态顶部导航 -->
+    <header id="top-bar" class="h-16 border-b flex items-center px-6 bg-white justify-between">
+      <span id="current-status" class="font-medium text-gray-600">就绪</span>
+      <div id="action-buttons"></div>
+    </header>
+
+    <!-- 3. 主内容区（你原本的代码放这里） -->
+    <main id="content-area" class="flex-1 p-6 overflow-auto bg-gray-50">
+      <div id="output-text">这里显示 Gemini 的回答...</div>
+    </main>
+  </div>
+</div>
