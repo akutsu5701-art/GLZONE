@@ -1,0 +1,5 @@
+{
+  "name": "Series Schedule Calendar",
+  "description": "A calendar application to track series episodes with automatic schedule calculation based on premiere date and frequency.",
+  "requestFramePermissions": []
+}
